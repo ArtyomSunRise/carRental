@@ -1,0 +1,6 @@
+export const RATE = {
+  BASE: 1000,
+  FROM_4_TO_9_DAYS: 950,
+  FROM_10_TO_17_DAYS: 900,
+  FROM_18_TO_29_DAYS: 850,
+};
