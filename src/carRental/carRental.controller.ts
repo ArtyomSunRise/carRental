@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
-import { CarRentalService } from './carRental,service';
+import { CarRentalService } from './carRental.service';
 import {
   CalculateRentalPriceParams,
   CheckCarParams,
