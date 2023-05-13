@@ -79,23 +79,28 @@ export class CarRentalService {
     return { ok: true, rentalSession: rentalSession.rows };
   }
 
-  public async reportCarLoadMonth({
-    month,
-  }: {
-    month: string;
-  }) {
+  public async reportCarLoadMonth({ month, }: { month: string }) {
     const reportCarLoadMonth = await this.carRental.query(`
       SELECT
         cr.car_id AS "carId",
         SUM("rentalPrice") AS "totalProfit",
-        SUM(cr."end"::DATE - cr.start::DATE) * 100 / date_part( 'days', (date_trunc('month', date ${month}) + interval '1 month - 1 day')) AS "averageCarLoadPerMonth"
+        SUM(cr."end"::DATE - cr.start::DATE) * 100 / date_part( 'days', (date_trunc('month', date '${month}') + interval '1 month - 1 day')) AS "averageCarLoadPerMonth"
       FROM car_rental cr
-      WHERE cr.start >= date_trunc('month', ${month}::timestamp)
-      AND cr.end <= date_trunc('month', ${month}::timestamp)+'1month'::interval-'1day'::interval
+      WHERE cr.start >= date_trunc('month', '${month}'::Date)
+      AND cr.end <= date_trunc('month', '${month}'::Date)+'1month'::interval-'1day'::interval
       GROUP BY cr.car_id
     `);
 
-    return { ok: true, reportCarLoadMonth: reportCarLoadMonth.rows };
+    const totalCarsLoad =
+      reportCarLoadMonth.rows.reduce(
+        (acc: number, car) => acc + car.averageCarLoadPerMonth,
+        0,
+      ) / reportCarLoadMonth.rows.length;
+
+    return {
+      ok: true,
+      reportCarLoadMonth: { byCar: reportCarLoadMonth.rows, totalCarsLoad },
+    };
   }
 
   private async isAlreadyRented({
@@ -110,8 +115,8 @@ export class CarRentalService {
     const alreadyRented = await this.carRental.query(`
     SELECT * FROM car_rental cr
     WHERE cr.car_id = '${carId}'
-    AND cr.end > date_trunc('day', '${start}'::timestamp without time zone) - INTERVAL '3 day'
-    AND cr.start < date_trunc( 'day', '${end}'::timestamp without time zone) + INTERVAL '3 day';
+    AND cr.end > date_trunc('day', '${start}'::timestamp) - INTERVAL '3 day'
+    AND cr.start < date_trunc( 'day', '${end}'::timestamp) + INTERVAL '3 day';
   `);
 
     if (alreadyRented.rows.length) {
